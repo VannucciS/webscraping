@@ -9,6 +9,9 @@ from  time import sleep as sleep
 import math
 #import pandas as pd
 
+"""
+Now I have to try to find a way to avoid cloudfare...
+""""
 
 url = 'https://www.wimoveis.com.br/casas-aluguel-distrito-federal-goias-ordem-publicado-maior.html'
 
