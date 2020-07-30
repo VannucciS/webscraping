@@ -10,6 +10,7 @@ from  time import sleep as sleep
 import math
 import pandas as pd
 from datetime import datetime
+from parsel import Selector
 
 
 
@@ -38,18 +39,23 @@ agent = browser.execute_script("return navigator.userAgent")
 
 
 browser.get(url)
-sleep(7)
+
+sleep(5)
 total = browser.find_element_by_css_selector("#react-result-title > h1 > b").text
 total_pages = round(int(total.replace('.','')) / 20)
+#html = browser.page_source
 
+df = pd.DataFrame(columns = ['titulo', 'caracteristicas', 'precos', 'endereco','rua', 'bairro', 'cidade','data_anuncio', 'link','data_pesquisa'])
 
-df = pd.DataFrame(columns = ['local', 'lista', 'precos', 'resumo', 'site', 'data_pesquisa'])
-
-local_list = []
-lista_list = []
+endereco_list = []
+titulo_list = []
 precos_list = []
-description_list = []
-    #site_list = []
+caracteristicas_list = []
+cidade_list = []
+bairro_list = []
+rua_list = []
+site_list = []
+data_anuncio_list=[]
 
 while True:
 
@@ -58,13 +64,13 @@ while True:
 
     #sleep(7)
 
-    while page < 5:
-        sleep(5)
+    while page <= 9:
+        sleep(3)
         browser.get("https://www.wimoveis.com.br/casas-aluguel-distrito-federal-goias-ordem-publicado-maior-pagina-" + str(page)+ ".html")
 
-        if page == total_pages:
+        if page == 1:
             print('time to do the captcha')
-            sleep(30) # Time to do the captcha
+            sleep(40) # Time to do the captcha
             
         page+=1
         print(page, total_pages, total)
@@ -75,23 +81,54 @@ while True:
             pass
         
 
-        local = browser.find_elements_by_tag_name(".posting-location go-to-posting")
-        for l in local:
-            local_list.append(l.text)
-        lista = browser.find_elements_by_tag_name("h2")
-        for li in lista:
-            lista_list.append(li.text)
-        precos = browser.find_elements_by_css_selector(".posting-price-container > div.posting-price > div > span > b")
+        endereco = browser.find_elements_by_xpath("//*[@class='posting-location go-to-posting']") #'Rua T 53 , Setor Marista, Goiânia'
+        for e in endereco:
+            if e is None:
+                endereco_list.append(0)
+            else:
+                endereco_list.append(e.text)
+            """
+            texto = e.text
+            f = texto.split()
+            for g in f:
+                rua_list.append(g[-3])
+                bairro_list.append(g[-2])
+                cidade_list.append(g[-1])
+            """
+        titulo = browser.find_elements_by_tag_name("h2") #'Sobrado Comercial Marista'
+        for li in titulo:
+            titulo_list.append(li.text)
+        
+        precos = browser.find_elements_by_css_selector(".posting-price-container > div.posting-price > div > span > b") #'R$ 5.500'
         for p in precos:
             precos_list.append(p.text)
-        description = browser.find_elements_by_css_selector(".posting-description")
-        for d in description:
-            description_list.append(d.text)
-        #site = browser.find_elements_by_css_selector("#react-posting-cards") #arrumar
+        
+        caracteristicas = browser.find_elements_by_xpath("//*[@class='main-features go-to-posting']") #'587 m² área total 221 m² área útil 0 Quartos 3 Banheiros 2 Vagas
+        for d in caracteristicas:
+            caracteristicas_list.append(d.text)
+        
+
+        site = browser.find_elements_by_xpath("//*[@href]")
+        try:
+            for ii in site:
+            #print(ii.get_attribute('href'))
+                if "propriedades" in ii.get_attribute('href'):
+                    site_list.append(ii.get_attribute('href'))
+        except:
+            pass
 
 
+       
 
-        print(len(lista_list), len(precos_list), len(description_list), len(local_list))
+
+        print(len(endereco_list), 
+              len(titulo_list), 
+              len(precos_list), 
+              len(caracteristicas_list),
+              len(cidade_list),
+              len(bairro_list),
+              len(rua_list),
+              len(site_list))
 
 
         # Ir para a proxima pagina
@@ -105,9 +142,16 @@ while True:
 
 #react-result-title > h1 > b
 #from list to dataframe
-df['local'] = local_list
-df['lista'] = lista_list
+df['titulo'] = titulo_list
+df['endereco'] = endereco_list
 df['precos'] = precos_list
+df['caracteristicas'] = caracteristicas_list
+"""
+df['rua'] = rua_list
+df['cidade'] = cidade_list
+df['bairro'] = bairro_list
+"""
+df['link'] = site_list
 df['data_pesquisa'] = datetime.now().strftime("%d-%m-%y")
 
 #save the dataframe to .csv
