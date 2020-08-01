@@ -9,13 +9,13 @@ from selenium.webdriver.chrome.options import Options # trying to insert headers
 from  time import sleep as sleep
 #import math
 import pandas as pd
-import datetime
-import re
+from datetime import datetime
+#from parsel import Selector
 
 
 
 
-url = 'https://www.wimoveis.com.br/casas-aluguel-distrito-federal-goias-ordem-publicado-maior.html'
+url = 'https://www.wimoveis.com.br/imoveis-aluguel-distrito-federal-goias.html'
 
 PATH = 'C:\chromedriver.exe'
 #browser = webdriver.Chrome(PATH)
@@ -87,26 +87,30 @@ bairro_list = []
 rua_list = []
 site_list = []
 data_anuncio_list=[]
-today = datetime.datetime.now().strftime("%d-%m-%y")
 
-while True:
+print(total_pages)
 
-    
+while True:    
     page = 1
 
-    #sleep(7)
-
-    while page <= 3:
-        sleep(3)
-        browser.get("https://www.wimoveis.com.br/casas-aluguel-distrito-federal-goias-ordem-publicado-maior-pagina-" + str(page)+ ".html")
+    
+    while page <= total_pages:
+        
+        browser.get("https://www.wimoveis.com.br/imoveis-aluguel-distrito-federal-goias-pagina-" + str(page)+ ".html")
+        sleep(5)
 
         if page == 1:
-            print('time to do the captcha')
-            sleep(40) # Time to do the captcha
-            
+            print('You have 40 seconds to captcha')
+            sleep(10) # Time to do the captcha
+            print("You have 30 seconds...")
+            sleep(10)
+            print("You have 20 seconds...")
+            sleep(10)
+            print("You have 10 seconds...")
+            sleep(10)
+            print("You're time is over...")
         page+=1
-        print(page, total_pages, total)
-
+        
         try:
             browser.find_element_by_css_selector("#modalContent > div > button > i").click()
         except:
@@ -119,14 +123,26 @@ while True:
                 endereco_list.append(0)
             else:
                 endereco_list.append(e.text)
-            """
-            texto = e.text
-            f = texto.split()
-            for g in f:
-                rua_list.append(g[-3])
-                bairro_list.append(g[-2])
-                cidade_list.append(g[-1])
-            """
+                """
+                texto = e.text
+                print(texto)
+                f = texto.split(",", maxsplit = 3)
+                print(f)
+                for g in f:
+                    print(g[0], g[1],g[2])
+                    if g[0] is None:
+                        rua_list.append(0)
+                    else:
+                        rua_list.append(g[0])
+                    if g[1] is None:
+                        rua_list.append(0)
+                    else:
+                        rua_list.append(g[1])
+                    if g[2] is None:
+                        rua_list.append(0)
+                    else:
+                        rua_list.append(g[2])
+                """
         titulo = browser.find_elements_by_tag_name("h2") #'Sobrado Comercial Marista'
         for li in titulo:
             titulo_list.append(li.text)
@@ -142,24 +158,11 @@ while True:
 
         site = browser.find_elements_by_xpath("//*[@href]")
         try:
-            for s in site:
-            #print(ii.get_attribute('href'))
-                if "propriedades" in s.get_attribute('href'):
-                    site_list.append(s.get_attribute('href'))
+            for ii in site:
+                if "propriedades" in ii.get_attribute('href'):
+                    site_list.append(ii.get_attribute('href'))
         except:
             pass
-
-        data_anuncio = browser.find_elements_by_css_selector(".posting-features-container")
-        for d in data_anuncio:
-            da = d.text
-            dat = re.sub("[a-zA-Zà-úÀ-Ú]", "", da)
-            data = dat.strip()
-            print(data, da, dat)
-            if data is None or "":
-                data_anuncio_list.append(today)
-            else:
-                #data_anuncio_list.append(datetime.datetime.now() + datetime.timedelta(days=int(data)))
-                data_anuncio_list.append(data)
 
 
        
@@ -167,7 +170,7 @@ while True:
 
         print(len(endereco_list), 
               len(titulo_list), 
-              len(precos_list), #react-posting-cards > div > div:nth-child(1) > div > div.second-column > div.posting-features-container > ul > li > i
+              len(precos_list), 
               len(caracteristicas_list),
               len(cidade_list),
               len(bairro_list),
@@ -176,7 +179,22 @@ while True:
 
 
         # Ir para a proxima pagina
-        
+        df['titulo'] = titulo_list
+        df['endereco'] = endereco_list
+        df['precos'] = precos_list
+        df['caracteristicas'] = caracteristicas_list
+        """
+        df['rua'] = rua_list
+        df['cidade'] = cidade_list
+        df['bairro'] = bairro_list
+        """
+        df['link'] = site_list
+        df['data_pesquisa'] = datetime.now().strftime("%d-%m-%y")
+
+        #save the dataframe to .csv
+        dia = datetime.now().strftime("%d-%m-%y")
+        df.to_csv("registros-do-dia-parcial-"+ dia +".csv")
+        print("verificar se foi salvo.")
     
         
     else:
@@ -196,33 +214,11 @@ df['cidade'] = cidade_list
 df['bairro'] = bairro_list
 """
 df['link'] = site_list
-df['data_anuncio'] = data_anuncio_list
-df['data_pesquisa'] = today
+df['data_pesquisa'] = datetime.now().strftime("%d-%m-%y")
 
 #save the dataframe to .csv
+dia = datetime.now().strftime("%d-%m-%y")
+df.to_csv("registros-do-dia-"+ dia +".csv")
 
-df.to_csv("registros-do-dia-"+ today +".csv")
-
-"""
-for index, l in enumerate(lista):
-    print (index, l.text)
-    
-
-
-for index, l in enumerate(price):
-    print (index, l.text)
-      
-
-for l in list:
-    print(l.find_element_by_tag_name("h2").text)
-#span.posting-location.go-to-posting
-
-#print(driver.page_source)
-
-print(prices)
-"""
-
-
-
-
+print("Bye, bye...")
 browser.quit()
